@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 public class BinarySearchTree : IEnumerable<int>
 {
@@ -68,7 +70,7 @@ public class BinarySearchTree : IEnumerable<int>
     /// <summary>
     /// Iterate backward through the BST.
     /// </summary>
-    public IEnumerable Reverse()
+    public IEnumerable<int> Reverse()
     {
         var numbers = new List<int>();
         TraverseBackward(_root, numbers);
@@ -78,9 +80,15 @@ public class BinarySearchTree : IEnumerable<int>
         }
     }
 
-    private void TraverseBackward(Node? node, List<int> values)
+    private void TraverseBackward(Node? current, List<int> values)
     {
-        // TODO Problem 3
+        if (current is null)
+            return;
+
+        // Right first (largest values first)
+        TraverseBackward(current.Right, values);
+        values.Add(current.Data);
+        TraverseBackward(current.Left, values);
     }
 
     /// <summary>
@@ -96,6 +104,48 @@ public class BinarySearchTree : IEnumerable<int>
     public override string ToString()
     {
         return "<Bst>{" + string.Join(", ", this) + "}";
+    }
+
+    /// <summary>
+    /// Insert middle elements of a sorted list to create a balanced tree.
+    /// Placed inside the class as a helper static method.
+    /// </summary>
+    public static void InsertMiddle(BinarySearchTree tree, List<int> values, int first, int last)
+    {
+        if (first > last)
+            return;
+
+        int mid = (first + last) / 2;
+        tree.Insert(values[mid]);
+
+        InsertMiddle(tree, values, first, mid - 1);
+        InsertMiddle(tree, values, mid + 1, last);
+    }
+
+    /// <summary>
+    /// Create a balanced BST from a sorted list/sequence.
+    /// </summary>
+    public static BinarySearchTree CreateTreeFromSortedList(List<int> values)
+    {
+        var tree = new BinarySearchTree();
+        if (values == null || values.Count == 0) return tree;
+
+        InsertMiddle(tree, values, 0, values.Count - 1);
+        return tree;
+    }
+
+    // Overload: IEnumerable<int>
+    public static BinarySearchTree CreateTreeFromSortedList(IEnumerable<int> values)
+    {
+        if (values == null) return new BinarySearchTree();
+        return CreateTreeFromSortedList(values.ToList());
+    }
+
+    // Overload: array
+    public static BinarySearchTree CreateTreeFromSortedList(int[] values)
+    {
+        if (values == null) return new BinarySearchTree();
+        return CreateTreeFromSortedList((IEnumerable<int>)values);
     }
 }
 
