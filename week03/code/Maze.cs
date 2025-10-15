@@ -66,4 +66,32 @@ public class Maze
     {
         return $"Current location (x={_currX}, y={_currY})";
     }
+
+    public static (int, int) MoveLeft((int, int) position, Dictionary<(int, int), (bool left, bool right, bool up, bool down)> maze)
+    {
+        if (maze == null || !maze.ContainsKey(position)) return position;
+        if (maze[position].left) return (position.Item1 - 1, position.Item2);
+        return position;
+    }
+
+    public static (int, int) MoveRight((int, int) position, Dictionary<(int, int), (bool left, bool right, bool up, bool down)> maze)
+    {
+        if (maze == null || !maze.ContainsKey(position)) return position;
+        if (maze[position].right) return (position.Item1 + 1, position.Item2);
+        return position;
+    }
+
+    public static (int, int) MoveUp((int, int) position, Dictionary<(int, int), (bool left, bool right, bool up, bool down)> maze)
+    {
+        if (maze == null || !maze.ContainsKey(position)) return position;
+        if (maze[position].up) return (position.Item1, position.Item2 + 1);
+        return position;
+    }
+
+    public static (int, int) MoveDown((int, int) position, Dictionary<(int, int), (bool left, bool right, bool up, bool down)> maze)
+    {
+        if (maze == null || !maze.ContainsKey(position)) return position;
+        if (maze[position].down) return (position.Item1, position.Item2 - 1);
+        return position;
+    }
 }

@@ -1,4 +1,6 @@
+using System.Net.Http;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 public static class SetsAndMaps
 {
@@ -19,10 +21,24 @@ public static class SetsAndMaps
     /// that there were no duplicates) and therefore should not be returned.
     /// </summary>
     /// <param name="words">An array of 2-character words (lowercase, no duplicates)</param>
-    public static string[] FindPairs(string[] words)
+    public static List<string> FindPairs(List<string> words)
     {
-        // TODO Problem 1 - ADD YOUR CODE HERE
-        return [];
+        var set = new HashSet<string>(words ?? new List<string>());
+        var result = new List<string>();
+
+        foreach (var word in words ?? Enumerable.Empty<string>())
+        {
+            var reversed = new string(word.Reverse().ToArray());
+            if (set.Contains(reversed) && word != reversed)
+            {
+                var pair = $"{word} & {reversed}";
+                var reversePair = $"{reversed} & {word}";
+                if (!result.Contains(reversePair))
+                    result.Add(pair);
+            }
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -38,14 +54,25 @@ public static class SetsAndMaps
     /// <returns>fixed array of divisors</returns>
     public static Dictionary<string, int> SummarizeDegrees(string filename)
     {
-        var degrees = new Dictionary<string, int>();
-        foreach (var line in File.ReadLines(filename))
+        var degreeSummary = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        if (!File.Exists(filename)) return degreeSummary;
+
+        var lines = File.ReadAllLines(filename);
+        foreach (var line in lines.Skip(1)) // skip header
         {
-            var fields = line.Split(",");
-            // TODO Problem 2 - ADD YOUR CODE HERE
+            var parts = line.Split(',');
+            if (parts.Length > 3)
+            {
+                var degree = parts[3].Trim();
+                if (degree == "") degree = "Unknown";
+                if (degreeSummary.ContainsKey(degree))
+                    degreeSummary[degree]++;
+                else
+                    degreeSummary[degree] = 1;
+            }
         }
 
-        return degrees;
+        return degreeSummary;
     }
 
     /// <summary>
@@ -66,8 +93,24 @@ public static class SetsAndMaps
     /// </summary>
     public static bool IsAnagram(string word1, string word2)
     {
-        // TODO Problem 3 - ADD YOUR CODE HERE
-        return false;
+        if (word1 == null || word2 == null) return false;
+
+        word1 = new string(word1.ToLower().Where(c => !char.IsWhiteSpace(c)).ToArray());
+        word2 = new string(word2.ToLower().Where(c => !char.IsWhiteSpace(c)).ToArray());
+        if (word1.Length != word2.Length) return false;
+
+        var counts = new Dictionary<char, int>();
+        foreach (var c in word1)
+            counts[c] = counts.GetValueOrDefault(c) + 1;
+
+        foreach (var c in word2)
+        {
+            if (!counts.ContainsKey(c)) return false;
+            counts[c]--;
+            if (counts[c] < 0) return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -84,23 +127,25 @@ public static class SetsAndMaps
     /// https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php
     /// 
     /// </summary>
-    public static string[] EarthquakeDailySummary()
+    public static async Task<List<string>> EarthquakeDailySummary()
     {
-        const string uri = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
+        const string url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
         using var client = new HttpClient();
-        using var getRequestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
-        using var jsonStream = client.Send(getRequestMessage).Content.ReadAsStream();
-        using var reader = new StreamReader(jsonStream);
-        var json = reader.ReadToEnd();
-        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var json = await client.GetStringAsync(url);
+        var data = JsonSerializer.Deserialize<FeatureCollection>(json);
+        var results = new List<string>();
+        if (data?.features == null) return results;
 
-        var featureCollection = JsonSerializer.Deserialize<FeatureCollection>(json, options);
-
-        // TODO Problem 5:
-        // 1. Add code in FeatureCollection.cs to describe the JSON using classes and properties 
-        // on those classes so that the call to Deserialize above works properly.
-        // 2. Add code below to create a string out each place a earthquake has happened today and its magitude.
-        // 3. Return an array of these string descriptions.
-        return [];
+        foreach (var f in data.features)
+        {
+            var place = f?.properties?.place ?? "Unknown";
+            var mag = f?.properties?.mag ?? 0.0;
+            results.Add($"{place} - Mag {mag}");
+        }
+        return results;
     }
+
+    public class FeatureCollection { public List<Feature> features { get; set; } }
+    public class Feature { public Properties properties { get; set; } }
+    public class Properties { public string place { get; set; } public double? mag { get; set; } }
 }
