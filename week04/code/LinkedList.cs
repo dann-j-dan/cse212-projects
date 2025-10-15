@@ -32,7 +32,35 @@ public class LinkedList : IEnumerable<int>
     /// </summary>
     public void InsertTail(int value)
     {
-        // TODO Problem 1
+        Node newNode = new Node(value);
+
+        // If the list is empty, set head and tail to the new node and return
+        if (_head == null)
+        {
+            _head = newNode;
+            _tail = newNode;
+            return;
+        }
+
+        // Otherwise append after current tail if available (use _tail for O(1))
+        if (_tail != null)
+        {
+            _tail.Next = newNode;
+            newNode.Prev = _tail;
+            _tail = newNode;
+            return;
+        }
+
+        // Fallback: traverse from head (defensive)
+        Node current = _head;
+        while (current.Next != null)
+        {
+            current = current.Next;
+        }
+
+        current.Next = newNode;
+        newNode.Prev = current;
+        _tail = newNode;
     }
 
 
@@ -64,7 +92,45 @@ public class LinkedList : IEnumerable<int>
     /// </summary>
     public void RemoveTail()
     {
-        // TODO Problem 2
+        // Empty list
+        if (_head == null)
+            return;
+
+        // Single node
+        if (_head == _tail)
+        {
+            _head = null;
+            _tail = null;
+            return;
+        }
+
+        // If tail is available, unlink it
+        if (_tail != null)
+        {
+            var prev = _tail.Prev;
+            if (prev != null)
+            {
+                prev.Next = null;
+                _tail = prev;
+            }
+            else
+            {
+                // defensive fallback
+                _head = null;
+                _tail = null;
+            }
+            return;
+        }
+
+        // Fallback: traverse to second-to-last
+        Node current = _head;
+        while (current.Next != null && current.Next.Next != null)
+        {
+            current = current.Next;
+        }
+
+        current.Next = null;
+        _tail = current;
     }
 
     /// <summary>
@@ -108,7 +174,45 @@ public class LinkedList : IEnumerable<int>
     /// </summary>
     public void Remove(int value)
     {
-        // TODO Problem 3
+        if (_head == null)
+            return;
+
+        if (_head.Data == value)
+        {
+            // remove head
+            if (_head == _tail)
+            {
+                _head = null;
+                _tail = null;
+            }
+            else
+            {
+                _head = _head.Next;
+                if (_head != null) _head.Prev = null;
+            }
+            return;
+        }
+
+        Node? current = _head;
+        while (current != null && current.Next != null)
+        {
+            if (current.Next.Data == value)
+            {
+                var toRemove = current.Next;
+                current.Next = toRemove.Next;
+                if (toRemove.Next != null)
+                {
+                    toRemove.Next.Prev = current;
+                }
+                else
+                {
+                    // removed last node
+                    _tail = current;
+                }
+                return;
+            }
+            current = current.Next;
+        }
     }
 
     /// <summary>
@@ -116,7 +220,13 @@ public class LinkedList : IEnumerable<int>
     /// </summary>
     public void Replace(int oldValue, int newValue)
     {
-        // TODO Problem 4
+        Node? current = _head;
+        while (current != null)
+        {
+            if (current.Data == oldValue)
+                current.Data = newValue;
+            current = current.Next;
+        }
     }
 
     /// <summary>
@@ -144,10 +254,17 @@ public class LinkedList : IEnumerable<int>
     /// <summary>
     /// Iterate backward through the Linked List
     /// </summary>
-    public IEnumerable Reverse()
+    public IEnumerable<int> Reverse()
     {
-        // TODO Problem 5
-        yield return 0; // replace this line with the correct yield return statement(s)
+        var stack = new Stack<int>();
+        Node? current = _head;
+        while (current != null)
+        {
+            stack.Push(current.Data);
+            current = current.Next;
+        }
+        while (stack.Count > 0)
+            yield return stack.Pop();
     }
 
     public override string ToString()
